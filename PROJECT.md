@@ -1,7 +1,7 @@
 # 📋 Mini Todo App — Complete Technical Documentation
 
 > A production-ready **MERN** (MongoDB, Express, React, Node.js) task manager.  
-> Features: **Glassmorphism UI** · **Priority-based tasks** · **REST API** · **AWS-ready** · **Real-time updates**
+> Features: **Glassmorphism UI** · **Priority-based tasks** · **REST API** · **Real-time updates**
 
 ---
 
