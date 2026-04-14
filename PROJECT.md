@@ -58,7 +58,7 @@ Mini Todo is a lightweight but production-ready task management application buil
 ```
 E:\Task\
 ├── package.json                  # Root script (concurrently) to start both servers at once
-├── server/                       # Node.js + Express backend
+├── backend/                      # Node.js + Express backend
 │   ├── server.js                 # App entry — forces IPv4, connects DB, starts server
 │   ├── package.json              # Backend dependencies
 │   ├── .env                      # Environment variables (NEVER commit this)
@@ -67,7 +67,7 @@ E:\Task\
 │   └── routes/
 │       └── tasks.js              # All CRUD route handlers (/tasks)
 │
-├── client/                       # React frontend (Vite)
+├── frontend/                     # React frontend (Vite)
 │   ├── index.html                # HTML entry point (Inter font, meta tags)
 │   ├── vite.config.js            # Vite config + dev proxy to backend
 │   ├── package.json              # Frontend dependencies
@@ -227,7 +227,7 @@ Delete a task by its MongoDB ObjectId.
 
 ## Data Model
 
-File: `server/models/Task.js`
+File: `backend/models/Task.js`
 
 ```js
 {
@@ -308,7 +308,7 @@ Non-blocking notification system.
 
 ## Design System
 
-All styles live in `client/src/index.css` using CSS custom properties.
+All styles live in `frontend/src/index.css` using CSS custom properties.
 
 ### Color Palette
 
@@ -336,7 +336,7 @@ All styles live in `client/src/index.css` using CSS custom properties.
 
 ## Environment Variables
 
-File: `server/.env`
+File: `backend/.env`
 
 ```env
 # Using direct connection string to bypass SRV DNS lookups if blocked on Windows networks
@@ -362,13 +362,13 @@ When deploying to AWS:
 - Git (optional)
 
 ### Step 1 — Configure the backend
-1. Open `server/.env`
+1. Open `backend/.env`
 2. Replace the `MONGO_URI` placeholder with your real MongoDB Atlas connection string
    - In MongoDB Atlas: **Connect → Drivers → Copy connection string**
    - Replace `<username>`, `<password>`, `<cluster>` with your actual values
 
 ### Step 2 — Install Dependencies
-Run this command from the root folder `E:\Task\` to install all dependencies for both client and server:
+Run this command from the root folder `E:\Task\` to install all dependencies for both frontend and backend:
 ```powershell
 npm run install:all
 ```
@@ -383,9 +383,9 @@ This uses `concurrently` to start both the Express backend and the Vite frontend
 
 You should see:
 ```
-[SERVER] ✅  Connected to MongoDB Atlas
-[SERVER] 🚀  Server running on http://localhost:5000
-[CLIENT]   VITE v8.0.8  ready in 300 ms
+[BACKEND] ✅  Connected to MongoDB Atlas
+[BACKEND] 🚀  Server running on http://localhost:5000
+[FRONTEND]   VITE v8.0.8  ready in 300 ms
 ```
 
 Open your browser to: **http://localhost:5173**
@@ -401,7 +401,7 @@ The Vite proxy automatically forwards `/tasks` API calls to `http://localhost:50
 |----------------|---------|------------------------------------------------------|
 | `concurrently` | ^8.2    | Runs both frontend and backend dev scripts in a single terminal |
 
-### Backend (`server/`)
+### Backend (`backend/`)
 
 | Package     | Version | What it does                                              |
 |-------------|---------|-----------------------------------------------------------|
@@ -411,7 +411,7 @@ The Vite proxy automatically forwards `/tasks` API calls to `http://localhost:50
 | `dotenv`    | ^16.4   | Loads variables from `.env` file into `process.env`       |
 | `nodemon`   | ^3.1    | Dev tool — auto-restarts server when you change files     |
 
-### Frontend (`client/`)
+### Frontend (`frontend/`)
 
 | Package          | Version | What it does                                         |
 |------------------|---------|------------------------------------------------------|
@@ -440,22 +440,22 @@ The Vite proxy automatically forwards `/tasks` API calls to `http://localhost:50
 
 ### Step 1 — Build the React frontend
 ```powershell
-cd E:\Task\client
+cd E:\Task\frontend
 npm run build
 ```
-This creates `client/dist/` — that's what you upload to S3.
+This creates `frontend/dist/` — that's what you upload to S3.
 
 ### Step 2 — S3 Setup
 1. Create an S3 bucket, enable **Static Website Hosting**
 2. Set index document to `index.html`
 3. Make bucket public (or use CloudFront)
-4. Upload `client/dist/` contents to the bucket
-5. Update `client/src/App.jsx` line: change `const API = "/tasks"` to `const API = "http://<your-ec2-ip>:5000/tasks"` before building
+4. Upload `frontend/dist/` contents to the bucket
+5. Update `frontend/src/App.jsx` line: change `const API = "/tasks"` to `const API = "http://<your-ec2-ip>:5000/tasks"` before building
 
 ### Step 3 — EC2 Setup
 1. Launch EC2 instance (Ubuntu 22.04 recommended)
 2. Install Node.js: `curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt install -y nodejs`
-3. Upload the `server/` folder to EC2 (via `scp` or CodeDeploy)
+3. Upload the `backend/` folder to EC2 (via `scp` or CodeDeploy)
 4. Set environment variables on EC2
 5. Install PM2 to keep the server alive: `npm install -g pm2`
 6. Start: `pm2 start server.js --name mini-todo`
@@ -471,12 +471,12 @@ In Atlas → **Network Access** → Add your EC2 instance's public IP.
 
 | Problem | Fix |
 |--------|-----|
-| `MONGO_URI is not set` error | Open `server/.env` and fill in your MongoDB connection string |
-| `Connection refused` on port 5000 | Make sure the backend is running (`npm run dev` in `server/`) |
+| `MONGO_URI is not set` error | Open `backend/.env` and fill in your MongoDB connection string |
+| `Connection refused` on port 5000 | Make sure the backend is running (`npm run dev` in `backend/`) |
 | Tasks not loading on frontend | Check browser console — is the Vite proxy running? Both servers must be up |
 | CORS error in production | Set `CLIENT_ORIGIN` in `.env` to your exact S3 URL (no trailing slash) |
 | MongoDB auth error | Check your Atlas username/password in the connection string |
-| Port 5173 already in use | Change `port` in `client/vite.config.js` or kill the process |
+| Port 5173 already in use | Change `port` in `frontend/vite.config.js` or kill the process |
 
 ---
 

@@ -4,8 +4,8 @@ import AddTask from "./components/AddTask";
 import TaskList from "./components/TaskList";
 import Toast from "./components/Toast";
 
-// Base URL — during development Vite proxies /tasks → localhost:5000
-const API = "/tasks";
+// Production URL — hitting your live GCP VM
+const API = "http://34.27.255.69:5000/tasks";
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
