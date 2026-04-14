@@ -1,4 +1,14 @@
-# Mini Todo App — Complete Setup & Deployment Guide
+# Step 1: Check status
+git status
+
+# Step 2: Stage all changes
+git add .
+
+# Step 3: Commit with descriptive message
+git commit -m "your descriptive message here"
+
+# Step 4: Push to main branch
+git push origin main# Mini Todo App — Complete Setup & Deployment Guide
 
 A full-stack MERN application with production-ready Docker setup, featuring a React frontend with glassmorphism design, Express backend, and MongoDB Atlas integration.
 
