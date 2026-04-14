@@ -1,16 +1,791 @@
-# Step 1: Check status
-git status
+# Mini Todo App — Production-Ready Kubernetes Deployment
 
-# Step 2: Stage all changes
-git add .
+A full-stack MERN (MongoDB, Express, React, Node.js) task management application with **containerized 3-layer architecture**, **Kubernetes orchestration**, and **automatic horizontal scaling** for high-traffic environments.
 
-# Step 3: Commit with descriptive message
-git commit -m "your descriptive message here"
+---
 
-# Step 4: Push to main branch
-git push origin main# Mini Todo App — Complete Setup & Deployment Guide
+## Table of Contents
 
-A full-stack MERN application with production-ready Docker setup, featuring a React frontend with glassmorphism design, Express backend, and MongoDB Atlas integration.
+1. [Architecture Overview](#architecture-overview)
+2. [Prerequisites](#prerequisites)
+3. [Quick Start](#quick-start)
+4. [Local Kubernetes Deployment](#local-kubernetes-deployment)
+5. [Technology Stack](#technology-stack)
+6. [Project Structure](#project-structure)
+7. [Configuration](#configuration)
+8. [API Reference](#api-reference)
+9. [Scaling & Performance](#scaling--performance)
+10. [Troubleshooting](#troubleshooting)
+
+---
+
+## Architecture Overview
+
+### System Architecture
+
+This application implements a **3-tier microservice architecture** with containerized deployment:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                      CLIENT TIER                             │
+│              React.js Frontend (Nginx Reverse Proxy)         │
+│                   Replicas: 2-6 (Auto-scaled)               │
+│  • Glassmorphism UI Design                                   │
+│  • Vite Build Optimization                                   │
+│  • API Proxy to Backend Service                              │
+└──────────────────┬───────────────────────────────────────────┘
+                   │ Internal K8s Service (http://backend:5000)
+┌──────────────────▼───────────────────────────────────────────┐
+│                   APPLICATION TIER                           │
+│           Express.js API Server (Node.js Alpine)             │
+│                   Replicas: 1-6 (Auto-scaled)               │
+│  • RESTful API (CRUD operations)                             │
+│  • CORS-enabled for frontend                                 │
+│  • Health checks for load balancing                          │
+│  • Resource limits: CPU 200m-600m, Memory 256Mi-512Mi        │
+└──────────────────┬───────────────────────────────────────────┘
+                   │ Internal K8s Service (mongodb://mongo:27017)
+┌──────────────────▼───────────────────────────────────────────┐
+│                    DATABASE TIER                             │
+│         MongoDB 7 (Single Replica, Persistent Storage)       │
+│  • Persistent Volume Claim: 2Gi                              │
+│  • Collection: tasks (title, completed, priority, timestamp) │
+│  • Resource limits: CPU 100m-300m, Memory 128Mi-512Mi        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Deployment Options
+
+| Setup | Use Case | Complexity |
+|-------|----------|-----------|
+| **Docker Compose** | Local development | ⭐ Low |
+| **Single-Cluster K8s** | Local testing with auto-scaling | ⭐⭐ Medium |
+| **Multi-Cluster K8s** | High availability & disaster recovery | ⭐⭐⭐ High |
+
+---
+
+## Prerequisites
+
+### System Requirements
+
+- **Docker**: v20.10+ with Docker Compose v1.29+
+- **Kubernetes**: Minikube (local), Kubernetes 1.28+, or managed K8s cluster
+- **kubectl**: v1.28+
+- **Node.js**: v18+ (for local development only)
+- **Git**: v2.0+
+
+### Verify Installation
+
+```bash
+# Check Docker
+docker --version
+docker-compose --version
+
+# Check Kubernetes
+kubectl version --client
+minikube version
+
+# Check Node.js (optional)
+node --version
+npm --version
+```
+
+---
+
+## Quick Start
+
+### Option 1: Docker Compose (Fastest)
+
+Ideal for quick testing without Kubernetes overhead.
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd Task
+
+# 2. Start services (frontend, backend, MongoDB)
+docker-compose up -d
+
+# 3. Access the application
+# Frontend: http://localhost:8082
+# API: http://localhost:5000 (from inside container)
+
+# 4. Monitor logs
+docker-compose logs -f
+
+# 5. Stop services
+docker-compose down
+```
+
+### Option 2: Local Kubernetes with Minikube
+
+Full containerized deployment with auto-scaling capability.
+
+```bash
+# 1. Start Minikube
+minikube start --cpus=4 --memory=4096
+
+# 2. Build images locally
+docker build -t task-backend:latest ./backend
+docker build -t task-frontend:latest ./frontend
+
+# 3. Configure Minikube image pull
+eval $(minikube docker-env)  # Load Minikube's Docker daemon
+docker build -t task-backend:latest ./backend
+docker build -t task-frontend:latest ./frontend
+
+# 4. Deploy to Kubernetes
+kubectl apply -f k8s/single/namespace.yaml
+kubectl apply -f k8s/single/mongo.yaml
+kubectl apply -f k8s/single/backend.yaml
+kubectl apply -f k8s/single/frontend.yaml
+kubectl apply -f k8s/single/hpa.yaml
+
+# 5. Verify deployment
+kubectl get pods -n todo
+kubectl get svc -n todo
+kubectl get hpa -n todo
+
+# 6. Port forward to access
+kubectl port-forward -n todo svc/frontend 8080:80
+# Access: http://localhost:8080
+
+# 7. Monitor auto-scaling
+watch kubectl get hpa -n todo
+```
+
+---
+
+## Local Kubernetes Deployment
+
+### Detailed Setup Steps
+
+#### Step 1: Initialize Minikube
+
+```bash
+# Start cluster with sufficient resources
+minikube start \
+  --cpus=4 \
+  --memory=4096 \
+  --driver=docker \
+  --kubernetes-version=v1.28.0
+
+# Enable metrics-server for HPA (auto-scaling)
+minikube addons enable metrics-server
+
+# Verify cluster
+kubectl cluster-info
+kubectl get nodes
+```
+
+#### Step 2: Build Container Images
+
+```bash
+# Access Minikube's Docker daemon
+eval $(minikube docker-env)
+
+# Build backend image
+docker build -t task-backend:latest ./backend
+
+# Build frontend image
+docker build -t task-frontend:latest ./frontend
+
+# Verify images
+docker images | grep task
+```
+
+#### Step 3: Deploy to Kubernetes
+
+```bash
+# Create namespace
+kubectl apply -f k8s/single/namespace.yaml
+
+# Deploy MongoDB (database layer)
+kubectl apply -f k8s/single/mongo.yaml
+kubectl get pods -n todo -l app=mongo
+
+# Deploy Backend (application layer)
+kubectl apply -f k8s/single/backend.yaml
+kubectl get pods -n todo -l app=backend
+
+# Deploy Frontend (client layer)
+kubectl apply -f k8s/single/frontend.yaml
+kubectl get pods -n todo -l app=frontend
+
+# Apply Auto-scaling policies
+kubectl apply -f k8s/single/hpa.yaml
+```
+
+#### Step 4: Verify Deployment
+
+```bash
+# Check all resources
+kubectl get all -n todo
+
+# View service endpoints
+kubectl get svc -n todo
+
+# Check pod status
+kubectl get pods -n todo -w
+
+# View HPA status
+kubectl get hpa -n todo
+
+# Check logs
+kubectl logs -n todo deployment/backend
+kubectl logs -n todo deployment/frontend
+kubectl logs -n todo deployment/mongo
+```
+
+#### Step 5: Access the Application
+
+```bash
+# Option A: Port forward
+kubectl port-forward -n todo svc/frontend 8080:80
+# Access: http://localhost:8080
+
+# Option B: NodePort (if exposed as NodePort)
+minikube service frontend -n todo
+
+# Option C: Minikube IP
+minikube ip
+# Add to /etc/hosts on Linux/macOS or hosts file on Windows:
+# <minikube-ip>  todo.local
+```
+
+---
+
+## Technology Stack
+
+### Frontend
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Framework | React | 19.2.4 | UI library |
+| Build Tool | Vite | 8.0.4 | Fast bundling |
+| HTTP Client | Axios | 1.15.0 | API requests |
+| Styling | Vanilla CSS | — | Glassmorphism design |
+| Server | Nginx | 1.27-alpine | Reverse proxy & static serving |
+| Container | Docker | 29.3.1 | Image packaging |
+
+### Backend
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Runtime | Node.js | 20-alpine | JavaScript runtime |
+| Framework | Express.js | 4.18.2 | REST API framework |
+| Database Driver | Mongoose | 8.0.3 | MongoDB ORM |
+| Utilities | dotenv | 16.3.1 | Environment management |
+| Container | Docker | 29.3.1 | Image packaging |
+
+### Database
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Database | MongoDB | 7 | NoSQL document store |
+| Storage | Persistent Volume | — | Data persistence in K8s |
+| Access | Internal Service | — | Pod-to-pod communication |
+
+### Infrastructure
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Orchestration | Kubernetes | 1.28+ | Container orchestration |
+| Scaling | HPA | v2 | Horizontal Pod Autoscaler |
+| Local Testing | Minikube | 1.30+ | Local K8s cluster |
+| Service Discovery | K8s DNS | — | Internal service routing |
+
+---
+
+## Project Structure
+
+```
+Task/
+├── README.md                    # This file - Deployment & API guide
+├── PROJECT.md                   # Technical documentation & code overview
+├── docker-compose.yml           # Local Docker Compose orchestration
+│
+├── backend/                     # Express.js API Server (Layer 2)
+│   ├── Dockerfile               # Alpine Node.js image, production build
+│   ├── .dockerignore            # Exclude node_modules, .env
+│   ├── server.js                # Express app, MongoDB connection, health check
+│   ├── package.json             # Dependencies: express, mongoose, cors
+│   ├── models/
+│   │   └── Task.js              # MongoDB schema (title, completed, priority)
+│   └── routes/
+│       └── tasks.js             # CRUD endpoints (GET, POST, PUT, DELETE)
+│
+├── frontend/                    # React + Nginx SPA (Layer 1)
+│   ├── Dockerfile               # Multi-stage: Node build → Nginx serve
+│   ├── nginx.conf.template      # Nginx config with environment variable support
+│   ├── nginx.conf               # Production Nginx reverse proxy
+│   ├── vite.config.js           # Dev server with API proxy
+│   ├── package.json             # Dependencies: react, vite, axios
+│   ├── index.html               # SPA entry point
+│   ├── public/                  # Static assets
+│   └── src/
+│       ├── main.jsx             # React entry point
+│       ├── App.jsx              # Root component with state management
+│       ├── index.css            # Glassmorphism design system
+│       └── components/
+│           ├── AddTask.jsx      # Task creation form
+│           ├── TaskList.jsx     # Task list container
+│           ├── TaskItem.jsx     # Individual task card
+│           └── Toast.jsx        # Notification system
+│
+├── k8s/                         # Kubernetes Manifests
+│   ├── single/                  # Single-cluster deployment
+│   │   ├── namespace.yaml       # K8s namespace: 'todo'
+│   │   ├── mongo.yaml           # MongoDB StatefulSet + PVC
+│   │   ├── backend.yaml         # Backend deployment + service
+│   │   ├── frontend.yaml        # Frontend deployment + service
+│   │   └── hpa.yaml             # Horizontal Pod Autoscaler (CPU-based)
+│   │
+│   └── multi/                   # Multi-cluster deployment (future)
+│       ├── backend-cluster.yaml # Backend for separate cluster
+│       └── frontend-cluster.yaml# Frontend for separate cluster
+│
+└── .git/                        # Version control
+```
+
+---
+
+## Configuration
+
+### Backend Environment Variables
+
+**File**: `backend/.env`
+
+```env
+# MongoDB connection string
+# Format: mongodb://user:password@host:port/database
+MONGO_URI=mongodb://mongo:27017/mini-todo-k8s
+
+# API port
+PORT=5000
+
+# Node environment
+NODE_ENV=production
+
+# CORS allowed origin (frontend URL)
+CLIENT_ORIGIN=http://localhost:8082
+```
+
+### Frontend Configuration
+
+**Vite Dev Server** (`frontend/vite.config.js`):
+- Proxies `/tasks` to backend on `http://localhost:5000`
+- Runs on port `5173` by default
+
+**Docker Compose** (`docker-compose.yml`):
+- `BACKEND_API_URL=http://backend:5000` (internal service DNS)
+
+**Kubernetes** (`k8s/single/backend.yaml`):
+```yaml
+MONGO_URI: mongodb://mongo:27017/mini-todo-k8s
+CLIENT_ORIGIN: http://todo.local
+```
+
+### Nginx Configuration
+
+**Frontend uses Nginx for**:
+1. **SPA Routing**: Fallback all routes to `index.html`
+2. **API Proxy**: `/tasks` → Backend service
+3. **Static Serving**: Vite-built assets
+4. **Performance**: Gzip compression, caching
+
+**Template variables** (`nginx.conf.template`):
+- `${BACKEND_API_URL}`: Dynamically set at container startup
+
+---
+
+## API Reference
+
+### Base URL
+- **Local Dev**: `http://localhost:5000`
+- **Docker Compose**: `http://backend:5000` (internal)
+- **Kubernetes**: `http://backend:5000` (K8s DNS)
+
+### Endpoints
+
+#### 1. Get All Tasks
+```
+GET /tasks
+
+Response: 200 OK
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Buy groceries",
+    "completed": false,
+    "priority": "high",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  ...
+]
+```
+
+#### 2. Create Task
+```
+POST /tasks
+
+Request Body:
+{
+  "title": "Complete project",
+  "priority": "high"
+}
+
+Response: 201 Created
+{
+  "_id": "507f1f77bcf86cd799439012",
+  "title": "Complete project",
+  "completed": false,
+  "priority": "high",
+  "createdAt": "2024-01-15T11:00:00Z",
+  "updatedAt": "2024-01-15T11:00:00Z"
+}
+```
+
+#### 3. Update Task
+```
+PUT /tasks/:id
+
+Request Body:
+{
+  "completed": true,
+  "title": "Complete project (Updated)",
+  "priority": "medium"
+}
+
+Response: 200 OK
+{
+  "_id": "507f1f77bcf86cd799439012",
+  "title": "Complete project (Updated)",
+  "completed": true,
+  "priority": "medium",
+  "updatedAt": "2024-01-15T11:05:00Z"
+}
+```
+
+#### 4. Delete Task
+```
+DELETE /tasks/:id
+
+Response: 200 OK
+{
+  "message": "Task deleted successfully"
+}
+```
+
+#### 5. Health Check
+```
+GET /
+
+Response: 200 OK
+{
+  "status": "ok",
+  "message": "Mini Todo API is running 🚀"
+}
+```
+
+### Error Responses
+
+```
+400 Bad Request
+{ "error": "Title is required" }
+
+404 Not Found
+{ "error": "Task not found" }
+
+500 Internal Server Error
+{ "error": "Internal server error", "details": "..." }
+```
+
+---
+
+## Scaling & Performance
+
+### Horizontal Pod Autoscaling (HPA)
+
+The application uses **CPU-based scaling** to handle traffic spikes automatically.
+
+#### Frontend Scaling Policy
+```yaml
+Min Replicas: 2  (always keeps 2 pods running)
+Max Replicas: 6  (max scale-out)
+Target CPU:  70% (scale when avg CPU > 70%)
+```
+
+#### Backend Scaling Policy
+```yaml
+Min Replicas: 1  (efficient resource usage)
+Max Replicas: 6  (matches frontend max)
+Target CPU:  60% (more sensitive than frontend)
+```
+
+#### Load Generation for Testing
+
+```bash
+# SSH into pod for testing
+kubectl exec -it -n todo deployment/frontend -- sh
+
+# Install load testing tool
+apk add --no-cache apache2-utils
+
+# Generate load
+ab -n 1000 -c 10 http://backend:5000/
+
+# Monitor scaling
+watch kubectl get hpa -n todo
+```
+
+#### Expected Scaling Behavior
+
+1. **Initial State**: Frontend=2 pods, Backend=1 pod
+2. **Load Applied**: CPU utilization increases
+3. **Scale-up (~2-3 min)**: HPA detects threshold, creates new pods
+4. **Peak**: Up to 6 pods per layer handling traffic
+5. **Load Removed**: Pods gradually scale down (cooldown period)
+
+#### Resource Requests & Limits
+
+**Backend Pod**:
+- Request: CPU 200m, Memory 256Mi (guaranteed)
+- Limit: CPU 600m, Memory 512Mi (max allowed)
+
+**Frontend Pod**:
+- Request: CPU 150m, Memory 128Mi (guaranteed)
+- Limit: CPU 400m, Memory 256Mi (max allowed)
+
+**MongoDB Pod**:
+- Request: CPU 100m, Memory 128Mi (guaranteed)
+- Limit: CPU 300m, Memory 512Mi (max allowed)
+
+---
+
+## Troubleshooting
+
+### Common Issues & Solutions
+
+#### Issue: Pods stuck in `CrashLoopBackOff`
+
+**Symptom**: Pod immediately crashes and restarts
+
+**Solutions**:
+```bash
+# Check pod logs
+kubectl logs -n todo deployment/backend --tail=50
+
+# Key issues to look for:
+# - MONGO_URI environment variable missing
+# - Port already in use
+# - Image pull failed
+
+# Inspect pod events
+kubectl describe pod -n todo <pod-name>
+```
+
+#### Issue: MongoDB connection refused
+
+**Symptom**: Backend fails to connect to MongoDB
+
+**Solutions**:
+```bash
+# Verify MongoDB is running
+kubectl get pods -n todo -l app=mongo
+
+# Check MongoDB service
+kubectl get svc -n todo mongo
+
+# Test connection from backend pod
+kubectl exec -it -n todo deployment/backend -- sh
+# Inside pod: telnet mongo 27017
+```
+
+#### Issue: Frontend cannot reach backend
+
+**Symptom**: API calls fail, network errors in browser console
+
+**Solutions**:
+```bash
+# Verify both services exist
+kubectl get svc -n todo
+
+# Check backend service DNS resolution
+kubectl exec -it -n todo deployment/frontend -- nslookup backend
+
+# Verify CORS configuration
+# Check logs for CORS errors
+kubectl logs -n todo deployment/backend | grep -i cors
+
+# Ensure CLIENT_ORIGIN matches frontend URL
+```
+
+#### Issue: HPA not scaling (remains at min replicas)
+
+**Symptom**: Pods don't increase even under load
+
+**Solutions**:
+```bash
+# Check HPA status
+kubectl describe hpa -n todo backend-hpa
+
+# Verify metrics are available
+kubectl top pods -n todo
+
+# Check CPU request is set (HPA needs request for percentage)
+kubectl get pods -n todo -o jsonpath='{.items[0].spec.containers[0].resources.requests.cpu}'
+
+# Wait 2-3 minutes for metrics collection
+```
+
+#### Issue: PersistentVolume not provisioning
+
+**Symptom**: MongoDB pod pending with PVC not bound
+
+**Solutions**:
+```bash
+# Check PVC status
+kubectl get pvc -n todo
+
+# Describe PVC for details
+kubectl describe pvc -n todo mongo-pvc
+
+# For Minikube, verify storage class
+kubectl get storageclass
+```
+
+#### Issue: Port forwarding fails
+
+**Symptom**: Cannot access application via localhost:8080
+
+**Solutions**:
+```bash
+# Verify service is accessible
+kubectl get svc -n todo frontend
+
+# Try different port
+kubectl port-forward -n todo svc/frontend 8089:80
+
+# Check firewall/antivirus blocking ports
+
+# Alternative: Use Minikube service
+minikube service frontend -n todo
+```
+
+#### Issue: Out of memory on Minikube
+
+**Symptom**: Random pod evictions, OOMKilled pods
+
+**Solutions**:
+```bash
+# Increase Minikube memory
+minikube stop
+minikube start --memory=8192  # Increase from 4096
+
+# Check node resources
+kubectl describe node minikube
+
+# Reduce resource requests if needed
+```
+
+### Debugging Commands
+
+```bash
+# Cluster health
+kubectl cluster-info
+kubectl get nodes
+kubectl top nodes
+
+# Application health
+kubectl get all -n todo
+kubectl get pods -n todo -o wide
+kubectl get svc -n todo
+
+# Logs and events
+kubectl logs -n todo deployment/backend
+kubectl logs -n todo deployment/frontend --all-containers=true
+kubectl get events -n todo --sort-by='.lastTimestamp'
+
+# Network debugging
+kubectl exec -it -n todo deployment/frontend -- ping backend
+kubectl port-forward -n todo svc/backend 5000:5000
+
+# Performance monitoring
+kubectl top pods -n todo
+kubectl top nodes
+kubectl describe hpa -n todo
+```
+
+---
+
+## Local Development
+
+### Running without Kubernetes
+
+```bash
+# 1. Install dependencies
+npm install --prefix frontend
+npm install --prefix backend
+
+# 2. Set MongoDB URI
+# backend/.env
+MONGO_URI=mongodb://localhost:27017/mini-todo-local
+PORT=5000
+
+# 3. Start local MongoDB
+mongod
+
+# 4. Start backend
+npm run backend
+
+# 5. Start frontend (new terminal)
+npm run frontend
+```
+
+---
+
+## Summary: Task Completion Checklist
+
+✅ **3-Layer Architecture Implemented**
+- Frontend: React with Nginx (Layer 1)
+- Backend: Express.js with Node.js (Layer 2)
+- Database: MongoDB (Layer 3)
+
+✅ **Containerization**
+- Individual Dockerfiles for frontend and backend
+- Multi-stage builds for optimized images
+- Docker Compose for local orchestration
+
+✅ **Local Kubernetes Deployment**
+- Complete K8s manifests (namespace, deployments, services, PVC)
+- Proper resource management with requests/limits
+- Health checks (liveness & readiness probes)
+- Database persistence with PersistentVolumeClaim
+
+✅ **Automatic Scaling**
+- Horizontal Pod Autoscaler (HPA) configured
+- CPU-based scaling metrics (60% backend, 70% frontend)
+- Min/max replica constraints (Backend: 1-6, Frontend: 2-6)
+- Ready for production traffic patterns
+
+✅ **Service Communication**
+- Kubernetes DNS for inter-pod communication
+- Service discovery for all layers
+- Proper networking policies
+
+✅ **Production Ready**
+- Environment-based configuration
+- Nginx templating for dynamic configuration
+- CORS setup for cross-origin requests
+- Error handling and logging
+
+---
+
+**Last Updated**: April 14, 2026  
+**Kubernetes Version**: 1.28+  
+**Docker Version**: 20.10+  
+**Status**: ✅ Task 1 Complete - Local Kubernetes deployment with auto-scaling
+# Mini Todo App — Production-Ready Kubernetes Deployment
+
+A full-stack MERN (MongoDB, Express, React, Node.js) task management application with **containerized 3-layer architecture**, **Kubernetes orchestration**, and **automatic horizontal scaling** for high-traffic environments.
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
