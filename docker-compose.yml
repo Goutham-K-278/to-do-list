@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: todo-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      CLIENT_ORIGIN: http://localhost:8082
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: todo-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+
+networks:
+  default:
+    name: todo-net
