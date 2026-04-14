@@ -7,6 +7,7 @@ A full-stack MERN (MongoDB, Express, React, Node.js) task management application
 ## What We Built
 
 ### Architecture (3-Tier System)
+
 - **Layer 1 (Client)**: React.js + Nginx → Port 8082 (Docker) or 8080 (K8s)
 - **Layer 2 (API)**: Express.js + Node.js → Port 5000 (internal service)
 - **Layer 3 (Database)**: MongoDB 7 → Persistent storage (2Gi)
@@ -14,12 +15,13 @@ A full-stack MERN (MongoDB, Express, React, Node.js) task management application
 Each layer is containerized individually with Docker, then orchestrated with Docker Compose (local) or Kubernetes (production).
 
 ### Key Features
+
 ✅ Task management (add/edit/delete)  
 ✅ Priority-based organization  
 ✅ Auto-scaling based on CPU usage  
 ✅ Health checks & load balancing  
 ✅ Persistent database storage  
-✅ Environment-based configuration  
+✅ Environment-based configuration
 
 ---
 
@@ -91,18 +93,19 @@ Task/
 
 ## Technology Stack
 
-| Component | Tech | Version |
-|-----------|------|---------|
-| Frontend | React + Vite + Nginx | 19.2.4, 8.0.4, 1.27 |
-| Backend | Node.js + Express | 20 Alpine, 4.18.2 |
-| Database | MongoDB | 7 |
-| Orchestration | Kubernetes / Docker Compose | 1.28+ / v5.1 |
+| Component     | Tech                        | Version             |
+| ------------- | --------------------------- | ------------------- |
+| Frontend      | React + Vite + Nginx        | 19.2.4, 8.0.4, 1.27 |
+| Backend       | Node.js + Express           | 20 Alpine, 4.18.2   |
+| Database      | MongoDB                     | 7                   |
+| Orchestration | Kubernetes / Docker Compose | 1.28+ / v5.1        |
 
 ---
 
 ## Configuration
 
 ### Environment Variables (backend/.env)
+
 ```env
 MONGO_URI=mongodb://mongo:27017/mini-todo-k8s
 PORT=5000
@@ -111,6 +114,7 @@ NODE_ENV=production
 ```
 
 ### Auto-Scaling (HPA)
+
 - **Frontend**: 2-6 replicas (scale at 70% CPU)
 - **Backend**: 1-6 replicas (scale at 60% CPU)
 - **MongoDB**: 1 replica (stateful)
@@ -121,15 +125,16 @@ NODE_ENV=production
 
 **Base URL**: `http://localhost:5000` (local) or `http://backend:5000` (K8s internal)
 
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| GET | `/tasks` | Get all tasks |
-| POST | `/tasks` | Create new task |
-| PUT | `/tasks/:id` | Update task |
-| DELETE | `/tasks/:id` | Delete task |
-| GET | `/` | Health check |
+| Method | Endpoint     | Purpose         |
+| ------ | ------------ | --------------- |
+| GET    | `/tasks`     | Get all tasks   |
+| POST   | `/tasks`     | Create new task |
+| PUT    | `/tasks/:id` | Update task     |
+| DELETE | `/tasks/:id` | Delete task     |
+| GET    | `/`          | Health check    |
 
 ### Example Request
+
 ```bash
 curl -X POST http://localhost:5000/tasks \
   -H "Content-Type: application/json" \
@@ -141,6 +146,7 @@ curl -X POST http://localhost:5000/tasks \
 ## Common Commands
 
 ### Docker Compose
+
 ```bash
 docker-compose up -d          # Start services
 docker-compose down           # Stop services
@@ -148,6 +154,7 @@ docker-compose logs -f        # View logs
 ```
 
 ### Kubernetes
+
 ```bash
 kubectl get all -n todo                           # View all resources
 kubectl logs -n todo deployment/backend           # Check backend logs
@@ -156,6 +163,7 @@ kubectl port-forward -n todo svc/frontend 8080:80 # Access frontend
 ```
 
 ### Useful Kubectl Commands
+
 ```bash
 # Check running pods
 kubectl get pods -n todo
@@ -175,23 +183,28 @@ kubectl exec -it -n todo deployment/backend -- sh
 ## Troubleshooting
 
 ### Problem: Pods in CrashLoopBackOff
+
 **Fix**: Check logs → `kubectl logs -n todo deployment/backend --tail=50`  
 Common issues: Missing environment variables, port conflicts, image pull failures
 
 ### Problem: MongoDB won't connect
+
 **Fix**: Verify service exists → `kubectl get svc -n todo mongo`  
 Test from pod: `kubectl exec -it -n todo deployment/backend -- telnet mongo 27017`
 
 ### Problem: Frontend can't reach backend
+
 **Fix**: Check service DNS → `kubectl exec -it -n todo deployment/frontend -- nslookup backend`  
 Verify CORS: Check logs for CORS errors
 
 ### Problem: HPA not scaling
+
 **Fix**: Wait 2-3 minutes for metrics collection  
 Check metrics: `kubectl top pods -n todo`  
 Verify CPU request is set in deployment
 
 ### Problem: Out of memory
+
 **Fix**: Increase Minikube memory → `minikube start --memory=8192`
 
 ---
@@ -212,7 +225,7 @@ mongod
 # Terminal 1: Start backend
 npm run backend
 
-# Terminal 2: Start frontend  
+# Terminal 2: Start frontend
 npm run frontend
 ```
 
@@ -227,7 +240,7 @@ npm run frontend
 ✅ **Auto-scaling** - HPA configured for traffic demand  
 ✅ **Persistent storage** - MongoDB with PersistentVolumeClaim  
 ✅ **Health checks** - Liveness & readiness probes configured  
-✅ **Service discovery** - Internal DNS for all layers  
+✅ **Service discovery** - Internal DNS for all layers
 
 ---
 
