@@ -1,34 +1,34 @@
-import { useState } from "react";
+import { useState } from 'react'
 
 export default function AddTask({ onAdd }) {
-  const [title, setTitle] = useState("");
-  const [priority, setPriority] = useState("medium");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [title, setTitle] = useState('')
+  const [priority, setPriority] = useState('medium')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const trimmed = title.trim();
+    e.preventDefault()
+    const trimmed = title.trim()
 
     if (!trimmed) {
-      setError("Please enter a task title.");
-      return;
+      setError('Please enter a task title.')
+      return
     }
 
-    setError("");
-    setLoading(true);
+    setError('')
+    setLoading(true)
     try {
-      await onAdd({ title: trimmed, priority });
-      setTitle("");
-      setPriority("medium");
+      await onAdd({ title: trimmed, priority })
+      setTitle('')
+      setPriority('medium')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSubmit(e);
-  };
+    if (e.key === 'Enter') handleSubmit(e)
+  }
 
   return (
     <section className="add-task-card" aria-label="Add a new task">
@@ -42,8 +42,8 @@ export default function AddTask({ onAdd }) {
           placeholder="What needs to be done?"
           value={title}
           onChange={(e) => {
-            setTitle(e.target.value);
-            if (error) setError("");
+            setTitle(e.target.value)
+            if (error) setError('')
           }}
           onKeyDown={handleKeyDown}
           maxLength={200}
@@ -72,7 +72,7 @@ export default function AddTask({ onAdd }) {
           disabled={loading || !title.trim()}
           aria-label="Add task"
         >
-          {loading ? "Adding…" : "+ Add Task"}
+          {loading ? 'Adding…' : '+ Add Task'}
         </button>
       </div>
 
@@ -82,5 +82,5 @@ export default function AddTask({ onAdd }) {
         </p>
       )}
     </section>
-  );
+  )
 }

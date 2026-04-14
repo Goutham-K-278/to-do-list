@@ -1,21 +1,21 @@
-const PRIORITY_LABEL = { high: "High", medium: "Medium", low: "Low" };
+const PRIORITY_LABEL = { high: 'High', medium: 'Medium', low: 'Low' }
 
 function formatDate(iso) {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export default function TaskItem({ task, onToggle, onDelete }) {
-  const { _id, title, completed, priority, createdAt } = task;
+  const { _id, title, completed, priority, createdAt } = task
 
   return (
     <li
-      className={`task-item ${completed ? "completed" : ""}`}
+      className={`task-item ${completed ? 'completed' : ''}`}
       data-priority={priority}
       role="listitem"
     >
@@ -26,7 +26,7 @@ export default function TaskItem({ task, onToggle, onDelete }) {
         className="task-checkbox"
         checked={completed}
         onChange={() => onToggle(_id, completed)}
-        aria-label={`Mark "${title}" as ${completed ? "pending" : "complete"}`}
+        aria-label={`Mark "${title}" as ${completed ? 'pending' : 'complete'}`}
       />
 
       {/* Body */}
@@ -35,12 +35,8 @@ export default function TaskItem({ task, onToggle, onDelete }) {
           {title}
         </p>
         <div className="task-meta">
-          <span className={`priority-badge ${priority}`}>
-            {PRIORITY_LABEL[priority]}
-          </span>
-          {createdAt && (
-            <span className="task-date">{formatDate(createdAt)}</span>
-          )}
+          <span className={`priority-badge ${priority}`}>{PRIORITY_LABEL[priority]}</span>
+          {createdAt && <span className="task-date">{formatDate(createdAt)}</span>}
         </div>
       </div>
 
@@ -55,5 +51,5 @@ export default function TaskItem({ task, onToggle, onDelete }) {
         ✕
       </button>
     </li>
-  );
+  )
 }

@@ -43,6 +43,19 @@ spec:
           persistentVolumeClaim:
             claimName: mongo-pvc
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: todo-back
+spec:
+  selector:
+    app: mongo
+  ports:
+    - port: 27017
+      targetPort: 27017
+      protocol: TCP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -68,11 +81,11 @@ spec:
             - name: NODE_ENV
               value: production
             - name: PORT
-              value: "5000"
+              value: '5000'
             - name: MONGO_URI
               value: mongodb://mongo:27017/mini-todo-k8s
             - name: CLIENT_ORIGIN
-              value: "*"
+              value: '*'
           resources:
             requests:
               cpu: 200m

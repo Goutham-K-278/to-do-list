@@ -1,91 +1,93 @@
-import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import AddTask from "./components/AddTask";
-import TaskList from "./components/TaskList";
-import Toast from "./components/Toast";
+import { useState, useEffect, useCallback } from 'react'
+import axios from 'axios'
+import AddTask from './components/AddTask'
+import TaskList from './components/TaskList'
+import Toast from './components/Toast'
 
-// Production URL — hitting your live GCP VM
-const API = "http://34.27.255.69:5000/tasks";
+// Use same-origin proxy path. In dev, Vite proxy forwards /tasks to backend.
+const API = '/tasks'
 
 export default function App() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all"); // "all" | "pending" | "done"
-  const [toasts, setToasts] = useState([]);
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('all') // "all" | "pending" | "done"
+  const [toasts, setToasts] = useState([])
 
   /* ── Toast helpers ─────────────────────────────────────── */
-  const addToast = useCallback((message, type = "success") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
-  }, []);
+  const addToast = useCallback((message, type = 'success') => {
+    const id = Date.now()
+    setToasts((prev) => [...prev, { id, message, type }])
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000)
+  }, [])
 
   /* ── Fetch tasks ───────────────────────────────────────── */
   const fetchTasks = useCallback(async () => {
     try {
-      setLoading(true);
-      const { data } = await axios.get(API);
-      setTasks(data);
+      setLoading(true)
+      const { data } = await axios.get(API)
+      setTasks(data)
     } catch {
-      addToast("Failed to load tasks — is the server running?", "error");
+      addToast('Failed to load tasks — is the server running?', 'error')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [addToast]);
+  }, [addToast])
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    fetchTasks()
+  }, [fetchTasks])
 
   /* ── Add task ──────────────────────────────────────────── */
   const handleAdd = async ({ title, priority }) => {
     try {
-      const { data } = await axios.post(API, { title, priority });
-      setTasks((prev) => [data, ...prev]);
-      addToast("Task added! 🎉");
+      const { data } = await axios.post(API, { title, priority })
+      setTasks((prev) => [data, ...prev])
+      addToast('Task added! 🎉')
     } catch {
-      addToast("Could not add task.", "error");
+      addToast('Could not add task.', 'error')
     }
-  };
+  }
 
   /* ── Toggle complete ───────────────────────────────────── */
   const handleToggle = async (id, completed) => {
     try {
-      const { data } = await axios.put(`${API}/${id}`, { completed: !completed });
-      setTasks((prev) => prev.map((t) => (t._id === id ? data : t)));
-      addToast(data.completed ? "Task completed ✓" : "Marked as pending");
+      const { data } = await axios.put(`${API}/${id}`, { completed: !completed })
+      setTasks((prev) => prev.map((t) => (t._id === id ? data : t)))
+      addToast(data.completed ? 'Task completed ✓' : 'Marked as pending')
     } catch {
-      addToast("Could not update task.", "error");
+      addToast('Could not update task.', 'error')
     }
-  };
+  }
 
   /* ── Delete task ───────────────────────────────────────── */
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API}/${id}`);
-      setTasks((prev) => prev.filter((t) => t._id !== id));
-      addToast("Task deleted.");
+      await axios.delete(`${API}/${id}`)
+      setTasks((prev) => prev.filter((t) => t._id !== id))
+      addToast('Task deleted.')
     } catch {
-      addToast("Could not delete task.", "error");
+      addToast('Could not delete task.', 'error')
     }
-  };
+  }
 
   /* ── Filter ────────────────────────────────────────────── */
   const filteredTasks = tasks.filter((t) => {
-    if (filter === "pending") return !t.completed;
-    if (filter === "done") return t.completed;
-    return true;
-  });
+    if (filter === 'pending') return !t.completed
+    if (filter === 'done') return t.completed
+    return true
+  })
 
-  const totalCount = tasks.length;
-  const doneCount = tasks.filter((t) => t.completed).length;
-  const pendingCount = totalCount - doneCount;
+  const totalCount = tasks.length
+  const doneCount = tasks.filter((t) => t.completed).length
+  const pendingCount = totalCount - doneCount
 
   return (
     <div className="app-wrapper">
       {/* Header */}
       <header className="app-header">
-        <div className="logo-icon" aria-hidden="true">✅</div>
+        <div className="logo-icon" aria-hidden="true">
+          ✅
+        </div>
         <h1>Mini Todo</h1>
         <p>Stay organized. Ship things. 🚀</p>
       </header>
@@ -111,11 +113,11 @@ export default function App() {
 
       {/* Filter Bar */}
       <div className="filter-bar" role="group" aria-label="Filter tasks">
-        {["all", "pending", "done"].map((f) => (
+        {['all', 'pending', 'done'].map((f) => (
           <button
             key={f}
             id={`filter-${f}`}
-            className={`filter-btn ${filter === f ? "active" : ""}`}
+            className={`filter-btn ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -140,5 +142,5 @@ export default function App() {
       {/* Toasts */}
       <Toast toasts={toasts} />
     </div>
-  );
+  )
 }

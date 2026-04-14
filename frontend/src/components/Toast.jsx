@@ -1,5 +1,5 @@
 export default function Toast({ toasts }) {
-  if (!toasts.length) return null;
+  if (!toasts.length) return null
 
   return (
     <div className="toast-container" role="region" aria-label="Notifications" aria-live="polite">
@@ -9,5 +9,5 @@ export default function Toast({ toasts }) {
         </div>
       ))}
     </div>
-  );
+  )
 }
