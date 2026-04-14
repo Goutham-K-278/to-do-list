@@ -593,6 +593,7 @@ body::after {
   padding: 2px 8px;
   border-radius: var(--radius-full);
   border: 1px solid transparent;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -628,6 +629,7 @@ body::after {
   cursor: pointer;
   transition: all var(--transition-fast);
   font-size: 13px;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
