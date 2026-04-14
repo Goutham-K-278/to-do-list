@@ -146,8 +146,8 @@ body::after {
 /* ── Glass mixin ──────────────────────────────────────────── */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-glass);
 }
@@ -184,8 +184,8 @@ body::after {
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-secondary));
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .app-header p {
@@ -211,8 +211,8 @@ body::after {
   border-radius: var(--radius-lg);
   /* Glassmorphism */
   background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-glass);
   transition: all var(--transition-base);
@@ -263,8 +263,8 @@ body::after {
   overflow: hidden;
   /* Glassmorphism */
   background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur-strong);
   -webkit-backdrop-filter: var(--glass-blur-strong);
+  backdrop-filter: var(--glass-blur-strong);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-glass);
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
@@ -309,8 +309,8 @@ body::after {
   font-family: var(--font);
   font-size: 0.95rem;
   outline: none;
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   transition: all var(--transition-fast);
 }
 
@@ -332,11 +332,11 @@ body::after {
   font-size: 0.85rem;
   outline: none;
   cursor: pointer;
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   transition: border-color var(--transition-fast);
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239990b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
@@ -411,8 +411,8 @@ body::after {
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
   background: rgba(255,255,255,0.035);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: var(--text-secondary);
   font-family: var(--font);
   font-size: 0.8rem;
@@ -463,8 +463,8 @@ body::after {
 
   /* Glassmorphism */
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-glass);
 
@@ -525,16 +525,16 @@ body::after {
 
 /* Custom Checkbox */
 .task-checkbox {
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   width: 20px;
   height: 20px;
   min-width: 20px;
   border-radius: 7px;
   /* Glass checkbox */
   background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   border: 1.5px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   position: relative;
@@ -693,8 +693,8 @@ body::after {
   border-radius: var(--radius-md);
   font-size: 0.84rem;
   font-weight: 500;
-  backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.08);
 }
