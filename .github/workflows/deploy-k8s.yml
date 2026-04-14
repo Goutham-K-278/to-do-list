@@ -1,0 +1,99 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      backend_image: ${{ steps.vars.outputs.backend_image }}
+      frontend_image: ${{ steps.vars.outputs.frontend_image }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set image tags
+        id: vars
+        run: |
+          echo "backend_image=ghcr.io/${{ github.repository_owner }}/task-backend:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "frontend_image=ghcr.io/${{ github.repository_owner }}/task-frontend:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.backend_image }}
+            ghcr.io/${{ github.repository_owner }}/task-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.frontend_image }}
+            ghcr.io/${{ github.repository_owner }}/task-frontend:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "$KUBE_CONFIG_DATA" | base64 -d > "$HOME/.kube/config"
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/single/namespace.yaml
+          kubectl apply -f k8s/single/mongo.yaml
+          kubectl apply -f k8s/single/backend.yaml
+          kubectl apply -f k8s/single/frontend.yaml
+          kubectl apply -f k8s/single/hpa.yaml
+
+      - name: Update deployment images
+        run: |
+          kubectl -n todo set image deployment/backend backend=${{ needs.build-and-push.outputs.backend_image }}
+          kubectl -n todo set image deployment/frontend frontend=${{ needs.build-and-push.outputs.frontend_image }}
+
+      - name: Ensure image pull policy is Always
+        run: |
+          kubectl -n todo patch deployment backend --type='merge' -p '{"spec":{"template":{"spec":{"containers":[{"name":"backend","imagePullPolicy":"Always"}]}}}}'
+          kubectl -n todo patch deployment frontend --type='merge' -p '{"spec":{"template":{"spec":{"containers":[{"name":"frontend","imagePullPolicy":"Always"}]}}}}'
+
+      - name: Wait for rollout
+        run: |
+          kubectl -n todo rollout status deployment/mongo --timeout=180s
+          kubectl -n todo rollout status deployment/backend --timeout=180s
+          kubectl -n todo rollout status deployment/frontend --timeout=180s
+
+      - name: Verify resources
+        run: kubectl -n todo get pods,svc,hpa
